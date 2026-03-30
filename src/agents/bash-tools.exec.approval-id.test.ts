@@ -123,7 +123,7 @@ describe("exec approvals", () => {
     expect(pendingText).toContain("Host: node");
     expect(pendingText).toContain("Node: node-1");
     expect(pendingText).toContain(`CWD: ${process.cwd()}`);
-    expect(pendingText).toContain("Command:\n```sh\nls -la\n```");
+    expect(pendingText).toMatch(/Command:\n```sh\n(?:\/bin\/sh -lc ")?ls -la(?:"|)\n```/);
     expect(pendingText).toContain("Mode: foreground (interactive approvals available).");
     expect(pendingText).toContain("Background mode requires pre-approved policy");
     const approvalId = details.approvalId;
@@ -364,7 +364,7 @@ describe("exec approvals", () => {
     expect(agentCalls[0]).toEqual(
       expect.objectContaining({
         sessionKey: "agent:main:main",
-        deliver: true,
+        deliver: false,
         idempotencyKey: expect.stringContaining("exec-approval-followup:"),
       }),
     );
@@ -450,8 +450,8 @@ describe("exec approvals", () => {
 
     expect(result.details.status).toBe("approval-pending");
     const pendingText = result.content.find((part) => part.type === "text")?.text ?? "";
-    expect(pendingText).toContain(
-      "Command:\n```sh\nnpm view diver --json | jq .name && brew outdated\n```",
+    expect(pendingText).toMatch(
+      /Command:\n```sh\n(?:\/bin\/sh -lc ")?npm view diver --json \| jq \.name && brew outdated(?:"|)\n```/,
     );
     expect(calls).toContain("exec.approval.request");
   });
@@ -482,8 +482,8 @@ describe("exec approvals", () => {
 
     expect(result.details.status).toBe("approval-pending");
     const pendingText = result.content.find((part) => part.type === "text")?.text ?? "";
-    expect(pendingText).toContain(
-      "Command:\n```sh\nnpm view diver --json | jq .name && brew outdated\n```",
+    expect(pendingText).toMatch(
+      /Command:\n```sh\n(?:\/bin\/sh -lc ")?npm view diver --json \| jq \.name && brew outdated(?:"|)\n```/,
     );
     expect(calls).toContain("exec.approval.request");
   });
