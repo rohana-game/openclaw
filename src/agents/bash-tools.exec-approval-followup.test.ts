@@ -58,6 +58,34 @@ describe("exec approval followup", () => {
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
+  it("keeps webchat followups inside the current session", async () => {
+    await sendExecApprovalFollowup({
+      approvalId: "req-webchat",
+      sessionKey: "agent:main:session-1",
+      turnSourceChannel: "webchat",
+      turnSourceTo: "session:webchat-main",
+      turnSourceAccountId: "default",
+      turnSourceThreadId: "thread-1",
+      resultText: "Exec finished successfully",
+    });
+
+    expect(callGatewayTool).toHaveBeenCalledWith(
+      "agent",
+      expect.any(Object),
+      expect.objectContaining({
+        sessionKey: "agent:main:session-1",
+        deliver: false,
+        channel: undefined,
+        to: undefined,
+        accountId: undefined,
+        threadId: undefined,
+        idempotencyKey: "exec-approval-followup:req-webchat",
+      }),
+      { expectFinal: true },
+    );
+    expect(sendMessage).not.toHaveBeenCalled();
+  });
+
   it.each([
     {
       channel: "slack",

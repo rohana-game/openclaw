@@ -5,7 +5,6 @@ import {
 import { sendMessage } from "../infra/outbound/message.js";
 import { isCronSessionKey, isSubagentSessionKey } from "../sessions/session-key-utils.js";
 import { normalizeLowercaseStringOrEmpty } from "../shared/string-coerce.js";
-import { isGatewayMessageChannel, normalizeMessageChannel } from "../utils/message-channel.js";
 import {
   formatExecDeniedUserMessage,
   isExecDeniedResultText,
@@ -129,33 +128,17 @@ function buildAgentFollowupArgs(params: {
   sessionKey: string;
   resultText: string;
   deliveryTarget: ExternalBestEffortDeliveryTarget;
-  sessionOnlyOriginChannel?: string;
-  turnSourceTo?: string;
-  turnSourceAccountId?: string;
-  turnSourceThreadId?: string | number;
 }) {
-  const { deliveryTarget, sessionOnlyOriginChannel } = params;
+  const { deliveryTarget } = params;
   return {
     sessionKey: params.sessionKey,
     message: buildExecApprovalFollowupPrompt(params.resultText),
     deliver: deliveryTarget.deliver,
     ...(deliveryTarget.deliver ? { bestEffortDeliver: true as const } : {}),
-    channel: deliveryTarget.deliver ? deliveryTarget.channel : sessionOnlyOriginChannel,
-    to: deliveryTarget.deliver
-      ? deliveryTarget.to
-      : sessionOnlyOriginChannel
-        ? params.turnSourceTo
-        : undefined,
-    accountId: deliveryTarget.deliver
-      ? deliveryTarget.accountId
-      : sessionOnlyOriginChannel
-        ? params.turnSourceAccountId
-        : undefined,
-    threadId: deliveryTarget.deliver
-      ? deliveryTarget.threadId
-      : sessionOnlyOriginChannel
-        ? params.turnSourceThreadId
-        : undefined,
+    channel: deliveryTarget.deliver ? deliveryTarget.channel : undefined,
+    to: deliveryTarget.deliver ? deliveryTarget.to : undefined,
+    accountId: deliveryTarget.deliver ? deliveryTarget.accountId : undefined,
+    threadId: deliveryTarget.deliver ? deliveryTarget.threadId : undefined,
     idempotencyKey: `exec-approval-followup:${params.approvalId}`,
   };
 }
@@ -205,11 +188,6 @@ export async function sendExecApprovalFollowup(
     accountId: params.turnSourceAccountId,
     threadId: params.turnSourceThreadId,
   });
-  const normalizedTurnSourceChannel = normalizeMessageChannel(params.turnSourceChannel);
-  const sessionOnlyOriginChannel =
-    normalizedTurnSourceChannel && isGatewayMessageChannel(normalizedTurnSourceChannel)
-      ? normalizedTurnSourceChannel
-      : undefined;
 
   let sessionError: unknown = null;
 
@@ -223,10 +201,6 @@ export async function sendExecApprovalFollowup(
           sessionKey,
           resultText,
           deliveryTarget,
-          sessionOnlyOriginChannel,
-          turnSourceTo: params.turnSourceTo,
-          turnSourceAccountId: params.turnSourceAccountId,
-          turnSourceThreadId: params.turnSourceThreadId,
         }),
         { expectFinal: true },
       );

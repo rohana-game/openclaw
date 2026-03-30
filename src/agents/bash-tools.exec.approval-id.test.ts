@@ -54,6 +54,10 @@ function getResultText(result: { content: Array<{ type?: string; text?: string }
   return result.content.find((part) => part.type === "text")?.text ?? "";
 }
 
+function escapeForCommandBlockRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function expectPendingApprovalText(
   result: {
     details: { status?: string };
@@ -80,8 +84,9 @@ function expectPendingApprovalText(
     expect(pendingText).toContain(`Node: ${options.nodeId}`);
   }
   expect(pendingText).toContain(`CWD: ${options.cwdText ?? process.cwd()}`);
-  expect(pendingText).toContain("Command:\n```sh\n");
-  expect(pendingText).toContain(options.command);
+  expect(pendingText).toMatch(
+    new RegExp(`Command:\\n\\\`\\\`\\\`sh\\n(?:\\/bin\\/sh -lc \")?${escapeForCommandBlockRegex(options.command)}(?:\"|)\\n\\\`\\\`\\\``),
+  );
   if (options.interactive) {
     expect(pendingText).toContain("Mode: foreground (interactive approvals available).");
     expect(pendingText).toContain(
@@ -102,8 +107,9 @@ function expectPendingCommandText(
 ) {
   expect(result.details.status).toBe("approval-pending");
   const text = getResultText(result);
-  expect(text).toContain("Command:\n```sh\n");
-  expect(text).toContain(command);
+  expect(text).toMatch(
+    new RegExp(`Command:\\n\\\`\\\`\\\`sh\\n(?:\\/bin\\/sh -lc \")?${escapeForCommandBlockRegex(command)}(?:\"|)\\n\\\`\\\`\\\``),
+  );
 }
 
 function mockGatewayOkCalls(calls: string[]) {
