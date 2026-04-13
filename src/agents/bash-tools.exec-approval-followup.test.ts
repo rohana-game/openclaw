@@ -58,6 +58,23 @@ describe("exec approval followup", () => {
     expect(sendMessage).not.toHaveBeenCalled();
   });
 
+  it("uses the extended session followup timeout for approved command completions", async () => {
+    await sendExecApprovalFollowup({
+      approvalId: "req-timeout",
+      sessionKey: "agent:main:main",
+      resultText: "Exec completed: echo ok",
+    });
+
+    expect(callGatewayTool).toHaveBeenCalledWith(
+      "agent",
+      expect.objectContaining({
+        timeoutMs: 180_000,
+      }),
+      expect.any(Object),
+      { expectFinal: true },
+    );
+  });
+
   it("keeps webchat followups inside the current session", async () => {
     await sendExecApprovalFollowup({
       approvalId: "req-webchat",

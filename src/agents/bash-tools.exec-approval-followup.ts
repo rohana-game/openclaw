@@ -23,6 +23,8 @@ type ExecApprovalFollowupParams = {
   resultText: string;
 };
 
+const EXEC_APPROVAL_FOLLOWUP_TIMEOUT_MS = 180_000;
+
 function buildExecDeniedFollowupPrompt(resultText: string): string {
   return [
     "An async command did not run.",
@@ -195,7 +197,7 @@ export async function sendExecApprovalFollowup(
     try {
       await callGatewayTool(
         "agent",
-        { timeoutMs: 60_000 },
+        { timeoutMs: EXEC_APPROVAL_FOLLOWUP_TIMEOUT_MS },
         buildAgentFollowupArgs({
           approvalId: params.approvalId,
           sessionKey,
