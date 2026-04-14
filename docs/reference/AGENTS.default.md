@@ -63,6 +63,13 @@ cp docs/reference/AGENTS.default.md ~/.openclaw/workspace/AGENTS.md
 - You’re not the user’s voice; be careful in group chats or public channels.
 - Don’t share private data, contact info, or internal notes.
 
+## Chinese-first replies (recommended)
+
+- If the user mainly writes in Simplified Chinese, default to natural Simplified Chinese replies.
+- Keep user-facing progress updates, approval guidance, execution status summaries, and draft thinking summaries in Simplified Chinese as well.
+- Rewrite low-level approval commands, approval ids, and raw tool/debug text into plain Chinese before showing them to the user.
+- Only switch to English when the user clearly asks for it or the task output genuinely needs to stay in English.
+
 ## Memory system (recommended)
 
 - Daily log: `memory/YYYY-MM-DD.md` (create `memory/` if needed).
