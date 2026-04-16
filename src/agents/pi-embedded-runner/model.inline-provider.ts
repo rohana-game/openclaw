@@ -2,6 +2,7 @@ import type { Api } from "@mariozechner/pi-ai";
 import type { ModelDefinitionConfig, ModelProviderConfig } from "../../config/types.js";
 import { normalizeGoogleApiBaseUrl } from "../../infra/google-api-base-url.js";
 import { normalizeOptionalLowercaseString } from "../../shared/string-coerce.js";
+import { SELF_HOSTED_DEFAULT_COST } from "../self-hosted-provider-defaults.js";
 import { isSecretRefHeaderValueMarker } from "../model-auth-markers.js";
 import {
   attachModelProviderRequestTransport,
@@ -107,6 +108,46 @@ export function resolveProviderModelInput(params: {
   return normalizedInput.length > 0 ? normalizedInput : ["text"];
 }
 
+function asModelCost(value: unknown): Partial<ModelDefinitionConfig["cost"]> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Partial<ModelDefinitionConfig["cost"]>)
+    : undefined;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+export function resolveProviderModelCost(params: {
+  cost?: unknown;
+  fallbackCost?: unknown;
+}): ModelDefinitionConfig["cost"] {
+  const configuredCost = asModelCost(params.cost);
+  const fallbackCost = asModelCost(params.fallbackCost);
+  return {
+    input: isFiniteNumber(configuredCost?.input)
+      ? configuredCost.input
+      : isFiniteNumber(fallbackCost?.input)
+        ? fallbackCost.input
+        : SELF_HOSTED_DEFAULT_COST.input,
+    output: isFiniteNumber(configuredCost?.output)
+      ? configuredCost.output
+      : isFiniteNumber(fallbackCost?.output)
+        ? fallbackCost.output
+        : SELF_HOSTED_DEFAULT_COST.output,
+    cacheRead: isFiniteNumber(configuredCost?.cacheRead)
+      ? configuredCost.cacheRead
+      : isFiniteNumber(fallbackCost?.cacheRead)
+        ? fallbackCost.cacheRead
+        : SELF_HOSTED_DEFAULT_COST.cacheRead,
+    cacheWrite: isFiniteNumber(configuredCost?.cacheWrite)
+      ? configuredCost.cacheWrite
+      : isFiniteNumber(fallbackCost?.cacheWrite)
+        ? fallbackCost.cacheWrite
+        : SELF_HOSTED_DEFAULT_COST.cacheWrite,
+  };
+}
+
 function resolveInlineProviderTransport(params: { api?: Api | null; baseUrl?: string }): {
   api?: Api;
   baseUrl?: string;
@@ -159,6 +200,7 @@ export function buildInlineProviderModels(
             modelName: model.name,
             input: model.input,
           }),
+          cost: resolveProviderModelCost({ cost: model.cost }),
           provider: trimmed,
           baseUrl: requestConfig.baseUrl ?? transport.baseUrl,
           api: requestConfig.api ?? model.api,

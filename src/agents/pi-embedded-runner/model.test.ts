@@ -1,3 +1,4 @@
+import { calculateCost } from "@mariozechner/pi-ai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { discoverModels } from "../pi-model-discovery.js";
 import { createProviderRuntimeTestMock } from "./model.provider-runtime.test-support.js";
@@ -138,6 +139,48 @@ describe("resolveModel", () => {
     expect(result.error).toBeUndefined();
     expect(Array.isArray(result.model?.input)).toBe(true);
     expect(result.model?.input).toEqual(["text"]);
+  });
+
+  it("defaults model cost to zero when configured providers omit cost metadata", () => {
+    const result = resolveModelForTest("custom", "missing-cost", "/tmp/agent", {
+      models: {
+        providers: {
+          custom: {
+            baseUrl: "http://localhost:9999",
+            api: "openai-completions",
+            models: [
+              {
+                id: "missing-cost",
+                name: "missing-cost",
+                reasoning: false,
+                input: ["text"],
+                contextWindow: 8192,
+                maxTokens: 1024,
+              },
+            ],
+          },
+        },
+      },
+    } as unknown as OpenClawConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.model?.cost).toEqual({
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+    });
+
+    expect(() =>
+      calculateCost(result.model as never, {
+        input: 10,
+        output: 5,
+        cacheRead: 0,
+        cacheWrite: 0,
+        totalTokens: 15,
+        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      } as never),
+    ).not.toThrow();
   });
 
   it("includes provider baseUrl in fallback model", () => {

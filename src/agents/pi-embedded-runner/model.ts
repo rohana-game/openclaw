@@ -32,6 +32,7 @@ import {
   buildInlineProviderModels,
   type InlineProviderConfig,
   normalizeResolvedTransportApi,
+  resolveProviderModelCost,
   resolveProviderModelInput,
   sanitizeModelHeaders,
 } from "./model.inline-provider.js";
@@ -140,6 +141,9 @@ function normalizeResolvedModel(params: {
       modelId: params.model.id,
       modelName: params.model.name,
       input: params.model.input,
+    }),
+    cost: resolveProviderModelCost({
+      cost: params.model.cost,
     }),
   } as Model<Api>;
   const runtimeHooks = params.runtimeHooks ?? DEFAULT_PROVIDER_RUNTIME_HOOKS;
@@ -330,7 +334,10 @@ function applyConfiguredProviderOverrides(params: {
       baseUrl: requestConfig.baseUrl ?? discoveredModel.baseUrl,
       reasoning: configuredModel?.reasoning ?? discoveredModel.reasoning,
       input: normalizedInput,
-      cost: configuredModel?.cost ?? discoveredModel.cost,
+      cost: resolveProviderModelCost({
+        cost: configuredModel?.cost,
+        fallbackCost: discoveredModel.cost,
+      }),
       contextWindow: configuredModel?.contextWindow ?? discoveredModel.contextWindow,
       contextTokens: configuredModel?.contextTokens ?? discoveredModel.contextTokens,
       maxTokens: configuredModel?.maxTokens ?? discoveredModel.maxTokens,
